@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.description   = %q{strong_attributes provides a strong_parameters-style permit interface using a wrapper around your model. By accessing model attributes in your views only through this interface, you ensure that any attributes displayed are explicitly permitted, and sensitive data is not displayed to unauthorized users. This keeps your views free of authorization logic.}
   gem.summary       = %q{strong_attributes provides a strong_parameters-style permit interface using a wrapper around your model. By accessing model attributes in your views only through this interface, you ensure that any attributes displayed are explicitly permitted, and sensitive data is not displayed to unauthorized users. This keeps your views free of authorization logic.}
   gem.homepage      = "https://github.com/ronalchn/strong_attributes"
-  gem.license       = "MPL"
+  gem.license       = "MPLv2"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}) { |f| File.basename(f) }
