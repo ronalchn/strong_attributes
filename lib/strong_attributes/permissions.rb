@@ -19,6 +19,7 @@ module StrongAttributes
     def initialize(permissions = nil, prefix_path = [])
       unless permissions.nil?
         @permitted_paths = permissions.permitted_paths
+        @permittable_paths = permissions.permittable_paths
         @prefix_path = permissions.prefix_path + canonicalize(prefix_path) # copy on write
       end
     end
@@ -47,6 +48,11 @@ module StrongAttributes
       attribute_path = canonicalize(attribute_path)
       return true if permitted_paths.include? prefix_path + attribute_path # exact match
       !path_tainted?(attribute_path) and permitted_by_wildcard?(prefix_path + attribute_path)  # wildcard match only if not tainted
+    end
+
+    def permittable? attribute_path
+      attribute_path = canonicalize(attribute_path)
+      permittable_paths.include?(prefix_path + attribute_path)
     end
 
     # Selects the attribute paths which are permitted.
@@ -81,7 +87,14 @@ module StrongAttributes
       attribute_paths = attribute_paths.map{|path|canonicalize(path).taint} # exact match
       reject_permitted(*attribute_paths).each do |attribute_path| # don't permit if already permitted
         permitted_paths << attribute_path # prefix_path = [] because of copy on write
+        raw_permittable(attribute_path.slice(0...-1))
       end
+      self
+    end
+
+    def permittable *attribute_paths
+      copy_on_write!
+      attribute_paths.each { |attribute_path| raw_permittable(canonicalize(attribute_path)) }
       self
     end
 
@@ -91,7 +104,20 @@ module StrongAttributes
       @permitted_paths ||= Set.new
     end
 
+    # some subpaths may be permitted
+    def permittable_paths
+      @permittable_paths ||= Set.new
+    end
+
     private
+    # will mutate attribute_path
+    def raw_permittable attribute_path
+      until attribute_path.empty? || permittable_paths.include?(attribute_path) do
+        permittable_paths << attribute_path.dup
+        attribute_path.pop
+      end
+    end
+
     # Is this still referencing another objects permissions?
     def reference?
       !@prefix_path.nil?
@@ -101,13 +127,20 @@ module StrongAttributes
     def copy_on_write!
       if prefix_path == []
         @permitted_paths = permitted_paths.dup
+        @permittable_paths = permittable_paths.dup
       elsif reference?
-        @permitted_paths, old_set = Set.new, permitted_paths
-        old_set.each do |path|
-          @permitted_paths << path[prefix_path.size...path.size] if path[0...prefix_path.size] == prefix_path
-        end
+        @permitted_paths = dup_paths permitted_paths, prefix_path
+        @permittable_paths = dup_paths permittable_paths, prefix_path
       end
       @prefix_path = nil
+    end
+
+    def dup_paths old_set, prefix_path
+      new_set = Set.new
+      old_set.each do |path|
+        new_set << path[prefix_path.size...path.size] if path[0...prefix_path.size] == prefix_path
+      end
+      new_set
     end
 
     def path_tainted? attribute_path
