@@ -29,19 +29,9 @@ module StrongAttributes
     #   user.displays :username, [:notifications, :unread] # returns [user.username, user.notifications(:unread)]
     #
     def displays *attributes
-      select_permitted(*attributes).map do |attribute|
-        args = Array(attribute).dup
-        value = self
-        until args.empty? do
-          arity = value.method(args[0]).arity
-          if arity >= 0
-            value = value.public_send *args.slice!(0, arity+1)
-          else
-            value = value.public_send *args
-            break
-          end
-        end
-        yield attribute, value if block_given?
+      select_permitted(*attributes).map do |attribute_path|
+        value = Array(attribute_path).inject(self) { |obj, args| obj.public_send *args }
+        yield attribute_path, value if block_given?
         value
       end
     end
