@@ -153,19 +153,14 @@ module StrongAttributes
         path[-1] = :*
         return true if permitted_paths.include? path
       end
-      until path.empty?
-        path[-1] = :**
-        return true if permitted_paths.include? path
-        path.pop
-      end
       false
     end
 
     # Converts symbols to strings (except for wildcard symbol)
     def canonicalize array
       array = Array(array)
-      canonical_array = array.map{|e| e.is_a?(Symbol) ? e.to_s : (e.is_a?(Array) ? e.first : e ) }
-      canonical_array[-1] = array.last if [:*, :**].include? array.last
+      canonical_array = array.map{|e| (e.is_a?(Array) ? e.first : e).instance_eval{ self.is_a?(Symbol) ? e.to_s : e } }
+      canonical_array[-1] = array.last if array.last == :*
       canonical_array.taint if array.tainted?
       canonical_array
     end
