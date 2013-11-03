@@ -47,16 +47,11 @@ module StrongAttributes
     describe "#permitted?" do
       context 'with some attributes permitted' do
         before(:all) do
-          @permissions = Permissions.new.permit([:another, :array], [:attr, :array], :attr2, :attr3, [:a, :wildcard, :*], [:wild, :**])
+          @permissions = Permissions.new.permit([:another, :array], [:attr, :array], :attr2, :attr3, [:a, :wildcard, :*])
         end
 
         it 'permits single wildcard' do
           expect(@permissions.permitted?([:a, :wildcard, :irrelevant])).to be true
-        end
-
-        it 'permits full wildcard' do
-          expect(@permissions.permitted?([:wild, :wildcard, :irrelevant])).to be true
-          expect(@permissions.permitted?([:wild, :irrelevant])).to be true
         end
 
         it 'does not permit un-prefixed path' do
